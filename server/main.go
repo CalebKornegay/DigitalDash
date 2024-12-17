@@ -1,18 +1,23 @@
 package main
 
 import (
+	"binary"
+	"bytes"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/rzetterberg/elmobd"
+
+	"tinygo.org/x/bluetooth"
 )
 
 type DigitalDash struct {
 	device               *elmobd.Device
 	wg                   *sync.WaitGroup
 	lock                 *sync.Mutex
+	bt_adapter           *bluetooth.Adapter
 	rpm_wait             time.Duration
 	fuel_level_wait      time.Duration
 	coolant_temp_wait    time.Duration
@@ -25,6 +30,7 @@ type DigitalDash struct {
 	throttle_pos_wait    time.Duration
 	odometer_wait        time.Duration
 	voltage_wait         time.Duration
+	rpmMeasurement       *bluetooth.Characteristic
 }
 
 func check_err(err error) {
@@ -40,14 +46,25 @@ func fatal(err error) {
 	}
 }
 
+func Float32ToByte(f float32) []byte {
+	var buf bytes.Buffer
+	err := binary.Write(&buf, binary.LittleEndian, f)
+	if err != nil {
+		fmt.Println("binary.Write failed:", err)
+	}
+	return buf.Bytes()
+}
+
 func (dash *DigitalDash) updateRPM() {
 	defer dash.wg.Done()
+
 	for {
 		cmd := elmobd.NewEngineRPM()
 		_, err := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		fmt.Printf("The engine rpm is %f\n", cmd.Value)
+		_, err = dash.rpmMeasurement.Write(Float32ToByte(cmd.Value))
+		check_err(err)
 
 		time.Sleep(dash.rpm_wait)
 	}
@@ -199,10 +216,49 @@ func (dash *DigitalDash) updateVoltage() {
 
 func main() {
 
-	device, err := elmobd.NewDevice("/dev/ttyUSB0", true)
+	adapter := bluetooth.DefaultAdapter
+	err := adapter.Enable()
 	fatal(err)
 
+	device, err := elmobd.NewDevice("/dev/ttyUSB0", true)
+	fatal(err)
 	time.Sleep(time.Second * 2) // Let the device initialize
+
+	// var rpmMeasurement, coolant_tempMeasurement, intake_air_tempMeasurement, speedMeasurement, ambient_tempMeasurement, fuel_levelMeasurement, maf_flow_rateMeasurement, throttle_posMeasurement, voltageMeasurement bluetooth.Characteristic
+
+	var rpmMeasurement bluetooth.Characteristic
+
+	// 0x2728 voltage
+	// 0x272F degrees celsius
+	// 0x2767 volume liters
+	// 0x27A4 distance miles
+	// 0x27A7 velocity mph
+	// 0x27AD percentage
+	// 0x27AF period revs per minute
+	// 0x27C1 mass flow grams per second
+	// 0x27C2 volume flow liters per second
+
+	adapter.AddService(&bluetooth.Service{
+		UUID: bluetooth.ServiceUUIDHumanInterfaceDevice,
+		Characteristics: []bluetooth.CharacteristicConfig{
+			{
+				Handle: &rpmMeasurement,
+				UUID:   bluetooth.New16BitUUID(0x27AF),
+				Value:  []byte{0, 0, 0, 0},
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+			},
+		},
+	})
+
+	advertisement := adapter.DefaultAdvertisement()
+	err = advertisement.Configure(bluetooth.AdvertisementOptions{
+		LocalName:    "Raspberry Pi OBD-II",
+		ServiceUUIDs: []bluetooth.UUID{bluetooth.ServiceUUIDHumanInterfaceDevice},
+	})
+	fatal(err)
+
+	err = advertisement.Start()
+	fatal(err)
 
 	// supported, err := device.CheckSupportedCommands()
 
@@ -227,16 +283,18 @@ func main() {
 		device:               device,
 		wg:                   &wg,
 		lock:                 &lock,
-		rpm_wait:             time.Millisecond * 50,
+		bt_adapter:           adapter,
+		rpm_wait:             time.Millisecond * 100,
 		fuel_level_wait:      time.Second * 5,
-		coolant_temp_wait:    time.Millisecond * 100,
-		engine_oil_temp_wait: time.Millisecond * 100,
-		intake_air_temp_wait: time.Millisecond * 100,
+		coolant_temp_wait:    time.Millisecond * 500,
+		engine_oil_temp_wait: time.Millisecond * 500,
+		intake_air_temp_wait: time.Millisecond * 500,
 		maf_wait:             time.Millisecond * 500,
-		speed_wait:           time.Millisecond * 50,
-		throttle_pos_wait:    time.Millisecond * 500,
+		speed_wait:           time.Millisecond * 100,
+		throttle_pos_wait:    time.Millisecond * 250,
 		odometer_wait:        time.Second * 5,
 		voltage_wait:         time.Second * 5,
+		rpmMeasurement:       &rpmMeasurement,
 	}
 
 	// on, err := device.GetIgnitionState()
