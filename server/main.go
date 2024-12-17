@@ -237,7 +237,7 @@ func main() {
 	var err error
 
 	// Try to connect to the device multiple times before giving up
-	for i := range 5 {
+	for i := 0; i < 5; i++ {
 		device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
 		if err == nil {
 			break
