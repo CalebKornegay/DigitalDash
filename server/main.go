@@ -41,7 +41,7 @@ func fatal(err error) {
 }
 
 func log(format string, a ...any) {
-	a = append(a, time.Now().Format("2006-01-02 15:04:05"))
+	a = append([]any{time.Now().Format("2006-01-02 15:04:05")}, a...)
 	format = "(LOG the time is %s): " + format
 	fmt.Printf(format, a...)
 }
@@ -228,10 +228,7 @@ func (dash *DigitalDash) updateVoltage() {
 }
 
 func main() {
-	time.Sleep(time.Second * 15)
-
-	// device, err := elmobd.NewDevice("/dev/ttyUSB0", false)
-	// fatal(err)
+	time.Sleep(time.Second * 25)
 
 	var device *elmobd.Device
 	var err error
