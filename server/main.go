@@ -46,6 +46,13 @@ func fatal(err error) {
 	}
 }
 
+func log(format string, a ...any) {
+
+	a = append([]any{time.Now().Format("2006-01-02 15:04:05")}, a...)
+	format = "(LOG the time is %s): " + format
+	fmt.Printf(format, a...)
+}
+
 func Float32ToByte(f float32) []byte {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.LittleEndian, f)
@@ -60,25 +67,29 @@ func (dash *DigitalDash) updateRPM() {
 
 	for {
 		cmd := elmobd.NewEngineRPM()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		_, err = dash.rpmMeasurement.Write(Float32ToByte(cmd.Value))
-		check_err(err)
+		log("The engine rpm is %f\n", cmd.Value)
 
-		time.Sleep(dash.rpm_wait)
+		// _, err = dash.rpmMeasurement.Write(Float32ToByte(cmd.Value))
+		// check_err(err)
+
 	}
-
 }
 
 func (dash *DigitalDash) updateFuelLevel() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewFuel()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The fuel level is %f%%\n", cmd.Value*100)
+		log("The fuel level is %f%%\n", cmd.Value*100)
 
 		time.Sleep(dash.fuel_level_wait)
 	}
@@ -88,10 +99,12 @@ func (dash *DigitalDash) updateCoolantTemp() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewCoolantTemperature()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The coolant temp is %d\u00b0\n", cmd.Value)
+		log("The coolant temp is %d\u00b0\n", cmd.Value)
 
 		time.Sleep(dash.coolant_temp_wait)
 	}
@@ -101,10 +114,12 @@ func (dash *DigitalDash) updateEngineOilTemp() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewEngineOilTemperature()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The engine oil temp is %d\u00b0\n", cmd.Value)
+		log("The engine oil temp is %d\u00b0\n", cmd.Value)
 
 		time.Sleep(dash.engine_oil_temp_wait)
 	}
@@ -114,10 +129,12 @@ func (dash *DigitalDash) updateIntakeAirTemp() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewIntakeAirTemperature()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The intake air temp is %d\u00b0\n", cmd.Value)
+		log("The intake air temp is %d\u00b0\n", cmd.Value)
 
 		time.Sleep(dash.intake_air_temp_wait)
 	}
@@ -127,10 +144,12 @@ func (dash *DigitalDash) updateMAFFlowRate() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewMafAirFlowRate()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The mass air flow sensor air flow rate is is %fL/hr\n", cmd.Value)
+		log("The mass air flow sensor air flow rate is is %fL/hr\n", cmd.Value)
 
 		time.Sleep(dash.maf_wait)
 	}
@@ -140,10 +159,12 @@ func (dash *DigitalDash) updateActualGear() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewTransmissionActualGear()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The current gear is %s\n", cmd.ValueAsLit())
+		log("The current gear is %s\n", cmd.ValueAsLit())
 
 		time.Sleep(dash.gear_wait)
 	}
@@ -153,10 +174,12 @@ func (dash *DigitalDash) updateSpeed() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewVehicleSpeed()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The current speed is %d\n", cmd.Value)
+		log("The current speed is %d\n", cmd.Value)
 
 		time.Sleep(dash.speed_wait)
 	}
@@ -166,10 +189,12 @@ func (dash *DigitalDash) updateAmbientTemp() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewAmbientTemperature()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The ambient temp is %d\u00b0\n", cmd.Value)
+		log("The ambient temp is %d\u00b0\n", cmd.Value)
 
 		time.Sleep(dash.ambient_temp_wait)
 	}
@@ -179,10 +204,12 @@ func (dash *DigitalDash) updateThrottlePosition() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewThrottlePosition()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The throttle position is %f%%\n", cmd.Value*100)
+		log("The throttle position is %f%%\n", cmd.Value*100)
 
 		time.Sleep(dash.throttle_pos_wait)
 	}
@@ -192,10 +219,12 @@ func (dash *DigitalDash) updateOdometer() {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewOdometer()
+		// dash.lock.Lock()
 		_, err := dash.device.RunOBDCommand(cmd)
+		// dash.lock.Unlock()
 
 		check_err(err)
-		fmt.Printf("The current mileage is %f miles\n", cmd.Value)
+		log("The current mileage is %f miles\n", cmd.Value)
 
 		time.Sleep(dash.odometer_wait)
 	}
@@ -205,30 +234,31 @@ func (dash *DigitalDash) updateVoltage() {
 	defer dash.wg.Done()
 
 	for {
+		// dash.lock.Lock()
 		voltage, err := dash.device.GetVoltage()
+		// dash.lock.Unlock()
 
 		check_err(err)
 
-		fmt.Printf("The current battery voltage is %fV\n", voltage)
+		log("The current battery voltage is %fV\n", voltage)
 		time.Sleep(dash.voltage_wait)
 	}
 }
 
 func main() {
+	var device *elmobd.Device
+	var err error
+
+	time.Sleep(time.Second * 25)
 
 	adapter := bluetooth.DefaultAdapter
-	err := adapter.Enable()
+	err = adapter.Enable()
 	fatal(err)
-
-	device, err := elmobd.NewDevice("/dev/ttyUSB0", true)
-	fatal(err)
-	time.Sleep(time.Second * 2) // Let the device initialize
 
 	// var rpmMeasurement, coolant_tempMeasurement, intake_air_tempMeasurement, speedMeasurement, ambient_tempMeasurement, fuel_levelMeasurement, maf_flow_rateMeasurement, throttle_posMeasurement, voltageMeasurement bluetooth.Characteristic
 
 	var rpmMeasurement bluetooth.Characteristic
 
-	// 0x2728 voltage
 	// 0x272F degrees celsius
 	// 0x2767 volume liters
 	// 0x27A4 distance miles
@@ -260,21 +290,18 @@ func main() {
 	err = advertisement.Start()
 	fatal(err)
 
-	// supported, err := device.CheckSupportedCommands()
+	// Try to connect to the device multiple times before giving up
+	for i := 0; i < 5; i++ {
+		device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
+		if err == nil {
+			break
+		} else if i == 4 {
+			fatal(err)
+		}
+		time.Sleep(time.Second * 3)
+	}
 
-	// if err != nil {
-	// 	fmt.Println("Failed to check supported commands", err)
-	// 	return
-	// }
-
-	// allCommands := elmobd.GetSensorCommands()
-	// carCommands := supported.FilterSupported(allCommands)
-
-	// fmt.Printf("%d of %d commands supported:\n", len(carCommands), len(allCommands))
-
-	// for _, cmd := range carCommands {
-	// 	fmt.Printf("- %s supported\n", cmd.Key())
-	// }
+	time.Sleep(time.Second * 3) // Let the device initialize
 
 	wg := sync.WaitGroup{}
 	lock := sync.Mutex{}
@@ -285,7 +312,6 @@ func main() {
 		lock:                 &lock,
 		bt_adapter:           adapter,
 		rpm_wait:             time.Millisecond * 100,
-		fuel_level_wait:      time.Second * 5,
 		coolant_temp_wait:    time.Millisecond * 500,
 		engine_oil_temp_wait: time.Millisecond * 500,
 		intake_air_temp_wait: time.Millisecond * 500,
@@ -297,9 +323,7 @@ func main() {
 		rpmMeasurement:       &rpmMeasurement,
 	}
 
-	// on, err := device.GetIgnitionState()
-	// check_err(err)
-	// fmt.Printf("The car is on: %t\n", on)
+	fmt.Printf("The car is on and the time is %s\n", time.Now())
 
 	wg.Add(12)
 	go dash.updateRPM()
