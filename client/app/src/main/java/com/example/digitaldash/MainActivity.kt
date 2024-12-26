@@ -1,0 +1,244 @@
+package com.example.digitaldash
+
+import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.example.digitaldash.ui.theme.DigitalDashTheme
+import java.util.Queue
+import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
+
+
+class MainActivity : ComponentActivity() {
+    private var name: String = "name"
+    private val bluetoothAdapter: BluetoothAdapter by lazy {
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothManager.adapter
+    }
+//    val bluetoothLeScanner: BluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+    private var bluetoothGatt: BluetoothGatt? = null
+    private val REQ_CODE: Int = 10001
+    private val OBDII_ADDR: String = "B8:27:EB:19:80:D8"
+
+    private val req_perms: Array<String> = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.BLUETOOTH
+        )
+    } else {
+        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    private val characteristics: Array<UUID> = arrayOf(
+            UUID.fromString("000027af-0000-1000-8000-00805f9b34fb"), // rpm
+            UUID.fromString("0000272f-0000-1000-8000-00805f9b34fb"), // coolant_temp
+            UUID.fromString("00002730-0000-1000-8000-00805f9b34fb"), // intake_air_temp
+            UUID.fromString("000027a7-0000-1000-8000-00805f9b34fb"), // speed
+            UUID.fromString("00002731-0000-1000-8000-00805f9b34fb"), // ambient_temp
+            UUID.fromString("000027ad-0000-1000-8000-00805f9b34fb"), // fuel_level
+            UUID.fromString("000027c1-0000-1000-8000-00805f9b34fb"), // maf_flow_rate
+            UUID.fromString("000027ae-0000-1000-8000-00805f9b34fb"), // throttle_pos
+            UUID.fromString("00002b18-0000-1000-8000-00805f9b34fb"), // battery_voltage
+            UUID.fromString("000027a4-0000-1000-8000-00805f9b34fb"), // odometer
+            UUID.fromString("00002732-0000-1000-8000-00805f9b34fb"), // engine_oil_temp
+            UUID.fromString("00002c08-0000-1000-8000-00805f9b34fb"), // gear_ratio
+        )
+
+    private val NOTIFICATION_DESCRIPTOR: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+    private val operationQueue: Queue<Runnable> = ConcurrentLinkedQueue()
+    private var isProcessingQueue = false
+
+    // Add this method to enqueue operations
+    private fun enqueueOperation(operation: Runnable) {
+        operationQueue.add(operation)
+        processQueue()
+    }
+
+    // Process the next operation in the queue
+    private fun processQueue() {
+        if (isProcessingQueue || operationQueue.isEmpty()) return
+
+        isProcessingQueue = true
+        val operation = operationQueue.poll()
+        operation?.run()
+    }
+
+    // Call this when an operation is complete
+    private fun operationCompleted() {
+        isProcessingQueue = false
+        processQueue()
+    }
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        if (!(req_perms.all {ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED})) {
+            ActivityCompat.requestPermissions(this, req_perms, REQ_CODE)
+        }else {
+            val device = bluetoothAdapter.getRemoteDevice(OBDII_ADDR)
+            bluetoothGatt = device.connectGatt(this@MainActivity, false, gattCallback)
+        }
+
+        setContent {
+            DigitalDashTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Greeting(
+                        name = name,
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+    }
+
+//    private val leCallback = object: ScanCallback() {
+//        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+//            super.onScanResult(callbackType, result)
+//            if (result != null) {
+//                Toast.makeText(this@MainActivity, result.device.name, Toast.LENGTH_LONG).show()
+//            }
+//        }
+//    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        if (requestCode == REQ_CODE) {
+            if (grantResults.all {it == PackageManager.PERMISSION_GRANTED}) {
+                val device = bluetoothAdapter.getRemoteDevice(OBDII_ADDR)
+                bluetoothGatt = device.connectGatt(this@MainActivity, false, gattCallback)
+            }
+        }
+    }
+
+    private val gattCallback = object: BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+            val deviceAddress = gatt?.device?.address
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
+                    gatt?.discoverServices()
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
+                    gatt?.close()
+                }
+            } else {
+                Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                gatt?.close()
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val service = gatt?.getService(UUID.fromString("00001812-0000-1000-8000-00805f9b34fb"))
+                characteristics.forEach {
+                    val characteristic = service?.getCharacteristic(it)
+                    if (characteristic != null) {
+                        enqueueOperation( Runnable {
+                            gatt?.setCharacteristicNotification(characteristic, true)
+                            val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                            if (descriptor != null) {
+                                Log.i("BLE", descriptor.toString())
+                            } else {
+                                Log.e("BLE", it.toString())
+                            }
+                            descriptor?.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                            gatt?.writeDescriptor(descriptor)
+                            Log.e("BLE", "Characterisitc ${characteristic.uuid.toString()})")
+                        })
+                    }
+                }
+            }
+        }
+
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            super.onCharacteristicChanged(gatt, characteristic, value)
+            Log.i("BLE", "Characteristic ${characteristic.uuid} = ${value.contentToString()} = ${parseBytes(value)}")
+        }
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor?,
+            status: Int
+        ) {
+            super.onDescriptorWrite(gatt, descriptor, status)
+            operationCompleted()
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int
+        ) {
+            super.onCharacteristicRead(gatt, characteristic, value, status)
+            Log.i("BLE", "Characteristic ${characteristic.uuid} = ${value.contentToString()}")
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bluetoothGatt?.close()
+        bluetoothGatt = null
+    }
+}
+
+@Composable
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Hello $name!",
+        modifier = modifier
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    DigitalDashTheme {
+        Greeting("Bluetooth")
+    }
+}
+
+fun parseBytes(value: ByteArray): Float {
+    if (value.size != 4) return 0.0F;
+    return Float.fromBits(
+        ((value[3].toInt() and 0xFF) shl 24)
+        or ((value[2].toInt() and 0xFF) shl 16)
+        or ((value[1].toInt() and 0xFF) shl 8)
+        or (value[0].toInt() and 0xFF))
+}
