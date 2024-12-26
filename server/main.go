@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -50,15 +50,17 @@ func log(format string, a ...any) {
 	fmt.Printf(format, a...)
 }
 
-func Float32ToByte(f float32) []byte {
-	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.LittleEndian, f)
-	if err != nil {
-		fmt.Println("binary.Write failed:", err)
-	}
-	return buf.Bytes()
-	// tmp := uint32(f)
-	// return []byte{uint8(tmp >> 24), uint8(tmp >> 16), uint8(tmp >> 8), uint8(tmp)}
+func Float32ToByte(float float32) []byte {
+	bits := math.Float32bits(float)
+	bytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bytes, bits)
+	return bytes
+}
+
+func Float32FromBytes(bytes []byte) float32 {
+	bits := binary.LittleEndian.Uint32(bytes)
+	float := math.Float32frombits(bits)
+	return float
 }
 
 func (dash *DigitalDash) updateRPM(measurement *bluetooth.Characteristic) {
@@ -291,174 +293,174 @@ func main() {
 				Handle: &rpmMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x27AF), // revs/min
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &coolant_tempMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x272F), // degrees C
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &intake_air_tempMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x2730), // degrees C
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &speedMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x27A7), // speed mph
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &ambient_tempMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x2731), // degrees C
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &fuel_levelMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &maf_flow_rateMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x27C1), // flow grams/sec
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &throttle_posMeasurement,
-				UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
+				UUID:   bluetooth.New16BitUUID(0x27AE), // percentage
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &voltageMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x2B18), // voltage
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &odometerMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x27A4), // distance miles
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &engine_oil_tempMeasuremnt,
 				UUID:   bluetooth.New16BitUUID(0x2732), // degrees C
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
 				Handle: &gearMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x2C0B), // torque (gear ratio)
 				Value:  []byte{0, 0, 0, 0},
-				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
+				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 		},
 	})
 	fatal(err)
 
-	var chars = []bluetooth.CharacteristicConfig{
-		{
-			Handle: &rpmMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27AF), // revs/min
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &coolant_tempMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x272F), // degrees C
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &intake_air_tempMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x2730), // degrees C
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &speedMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27A7), // speed mph
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &ambient_tempMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x2731), // degrees C
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &fuel_levelMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &maf_flow_rateMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27C1), // flow grams/sec
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &throttle_posMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &voltageMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x2B18), // voltage
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &odometerMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x27A4), // distance miles
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &engine_oil_tempMeasuremnt,
-			UUID:   bluetooth.New16BitUUID(0x2732), // degrees C
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-		{
-			Handle: &gearMeasurement,
-			UUID:   bluetooth.New16BitUUID(0x2C0B), // torque (gear ratio)
-			Value:  []byte{0, 0, 0, 0},
-			Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission,
-		},
-	}
-
-	var i byte = 0
-	for {
-		for char := range chars {
-			chars[char].Handle.Write([]byte{i, i, i, i})
-			i += 1
-		}
-	}
-
-	// Try to connect to the device multiple times before giving up
-	// for i := 0; i < 5; i++ {
-	// 	device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
-	// 	if err == nil {
-	// 		break
-	// 	} else if i == 4 {
-	// 		fatal(err)
-	// 	}
-	// 	time.Sleep(time.Second * 3)
+	// var chars = []bluetooth.CharacteristicConfig{
+	// 	{
+	// 		Handle: &rpmMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27AF), // revs/min
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &coolant_tempMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x272F), // degrees C
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &intake_air_tempMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x2730), // degrees C
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &speedMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27A7), // speed mph
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &ambient_tempMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x2731), // degrees C
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &fuel_levelMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &maf_flow_rateMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27C1), // flow grams/sec
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &throttle_posMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27AD), // percentage
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &voltageMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x2B18), // voltage
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &odometerMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x27A4), // distance miles
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &engine_oil_tempMeasuremnt,
+	// 		UUID:   bluetooth.New16BitUUID(0x2732), // degrees C
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
+	// 	{
+	// 		Handle: &gearMeasurement,
+	// 		UUID:   bluetooth.New16BitUUID(0x2C0B), // torque (gear ratio)
+	// 		Value:  []byte{0, 0, 0, 0},
+	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
+	// 	},
 	// }
 
-	// time.Sleep(time.Second * 3) // Let the device initialize
+	// var i float32 = 0.0
+	// for {
+	// 	for char := range chars {
+	// 		chars[char].Handle.Write(Float32ToByte(i))
+	// 	}
+	// 	i += 1
+	// 	time.Sleep(time.Second * 1)
+	// }
 
+	// Try to connect to the device multiple times before giving up
+	for i := 0; i < 5; i++ {
+		device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
+		if err == nil {
+			break
+		} else if i == 4 {
+			fatal(err)
+		}
+		time.Sleep(time.Second * 3)
+	}
+
+	time.Sleep(time.Second * 3) // Let the device initialize
 	wg := sync.WaitGroup{}
 
 	var dash DigitalDash = DigitalDash{
