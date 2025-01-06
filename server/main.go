@@ -68,7 +68,7 @@ func (dash *DigitalDash) updateRPM(measurement *bluetooth.Characteristic) {
 
 	for {
 		cmd := elmobd.NewEngineRPM()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The engine rpm is %f\n", cmd.Value)
@@ -84,7 +84,7 @@ func (dash *DigitalDash) updateFuelLevel(measurement *bluetooth.Characteristic) 
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewFuel()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The fuel level is %f%%\n", cmd.Value*100)
@@ -100,7 +100,7 @@ func (dash *DigitalDash) updateCoolantTemp(measurement *bluetooth.Characteristic
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewCoolantTemperature()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The coolant temp is %d\u00b0\n", cmd.Value)
@@ -116,7 +116,7 @@ func (dash *DigitalDash) updateEngineOilTemp(measurement *bluetooth.Characterist
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewEngineOilTemperature()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The engine oil temp is %d\u00b0\n", cmd.Value)
@@ -132,7 +132,7 @@ func (dash *DigitalDash) updateIntakeAirTemp(measurement *bluetooth.Characterist
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewIntakeAirTemperature()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The intake air temp is %d\u00b0C\n", cmd.Value)
@@ -148,7 +148,7 @@ func (dash *DigitalDash) updateMAFFlowRate(measurement *bluetooth.Characteristic
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewMafAirFlowRate()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The mass air flow sensor air flow rate is is %fg/min\n", cmd.Value)
@@ -164,12 +164,13 @@ func (dash *DigitalDash) updateActualGear(measurement *bluetooth.Characteristic)
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewTransmissionActualGear()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, raw_val := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The current gear is %s\n", cmd.ValueAsLit())
+		log("The current gear is %v\n", raw_val)
 
-		_, err = measurement.Write(Float32ToByte(cmd.Value))
+		_, err = measurement.Write(raw_val)
 		check_err(err)
 
 		time.Sleep(dash.gear_wait)
@@ -180,12 +181,12 @@ func (dash *DigitalDash) updateSpeed(measurement *bluetooth.Characteristic) {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewVehicleSpeed()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The current speed is %d\n", cmd.Value)
 
-		_, err = measurement.Write(Float32ToByte(float32(cmd.Value)))
+		_, err = measurement.Write(Float32ToByte(float32(cmd.Value & 255)))
 		check_err(err)
 
 		time.Sleep(dash.speed_wait)
@@ -196,7 +197,7 @@ func (dash *DigitalDash) updateAmbientTemp(measurement *bluetooth.Characteristic
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewAmbientTemperature()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The ambient temp is %d\u00b0\n", cmd.Value)
@@ -212,7 +213,7 @@ func (dash *DigitalDash) updateThrottlePosition(measurement *bluetooth.Character
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewThrottlePosition()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The throttle position is %f%%\n", cmd.Value*100)
@@ -228,7 +229,7 @@ func (dash *DigitalDash) updateOdometer(measurement *bluetooth.Characteristic) {
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewOdometer()
-		_, err := dash.device.RunOBDCommand(cmd)
+		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The current mileage is %f miles\n", cmd.Value)
@@ -265,7 +266,7 @@ func main() {
 	err = adapter.Enable()
 	fatal(err)
 
-	var rpmMeasurement, coolant_tempMeasurement, intake_air_tempMeasurement, speedMeasurement, ambient_tempMeasurement, fuel_levelMeasurement, maf_flow_rateMeasurement, throttle_posMeasurement, voltageMeasurement, engine_oil_tempMeasuremnt, gearMeasurement, odometerMeasurement bluetooth.Characteristic
+	var rpmMeasurement, coolant_tempMeasurement, intake_air_tempMeasurement, speedMeasurement, ambient_tempMeasurement, fuel_levelMeasurement, maf_flow_rateMeasurement, throttle_posMeasurement, voltageMeasurement, engine_oil_tempMeasurement, gearMeasurement, odometerMeasurement bluetooth.Characteristic
 
 	// 0x272F degrees celsius
 	// 0x2767 volume liters
@@ -350,7 +351,7 @@ func main() {
 				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 			},
 			{
-				Handle: &engine_oil_tempMeasuremnt,
+				Handle: &engine_oil_tempMeasurement,
 				UUID:   bluetooth.New16BitUUID(0x2732), // degrees C
 				Value:  []byte{0, 0, 0, 0},
 				Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
@@ -427,7 +428,7 @@ func main() {
 	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
 	// 	},
 	// 	{
-	// 		Handle: &engine_oil_tempMeasuremnt,
+	// 		Handle: &engine_oil_tempMeasurement,
 	// 		UUID:   bluetooth.New16BitUUID(0x2732), // degrees C
 	// 		Value:  []byte{0, 0, 0, 0},
 	// 		Flags:  bluetooth.CharacteristicWriteWithoutResponsePermission | bluetooth.CharacteristicNotifyPermission | bluetooth.CharacteristicReadPermission,
@@ -451,7 +452,7 @@ func main() {
 
 	// Try to connect to the device multiple times before giving up
 	for i := 0; i < 5; i++ {
-		device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
+		device, err = elmobd.NewDevice("/dev/ttyUSB0", true)
 		if err == nil {
 			break
 		} else if i == 4 {
@@ -484,10 +485,10 @@ func main() {
 	go dash.updateRPM(&rpmMeasurement)
 	go dash.updateFuelLevel(&fuel_levelMeasurement)
 	go dash.updateCoolantTemp(&coolant_tempMeasurement)
-	go dash.updateEngineOilTemp(&engine_oil_tempMeasuremnt) // ECHO mismatch
+	go dash.updateEngineOilTemp(&engine_oil_tempMeasurement) // ECHO mismatch
 	go dash.updateIntakeAirTemp(&intake_air_tempMeasurement)
 	go dash.updateMAFFlowRate(&maf_flow_rateMeasurement)
-	go dash.updateOdometer(&odometerMeasurement) // Reads incorrectly (18830.1 miles when I have 11700.2)
+	go dash.updateOdometer(&odometerMeasurement)
 	go dash.updateSpeed(&speedMeasurement)
 	go dash.updateThrottlePosition(&throttle_posMeasurement)
 	go dash.updateActualGear(&gearMeasurement) // NO DATA ??
