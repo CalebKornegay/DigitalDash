@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.digitaldash.ui.theme.DigitalDashTheme
+import java.util.Locale
 import java.util.Queue
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -105,16 +107,17 @@ class MainActivity : ComponentActivity() {
             bluetoothGatt = device.connectGatt(this@MainActivity, false, gattCallback)
         }
 
-        setContent {
-            DigitalDashTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = name,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
+//        setContent {
+//            DigitalDashTheme {
+//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+//                    Greeting(
+//                        name = name,
+//                        modifier = Modifier.padding(innerPadding)
+//                    )
+//                }
+//            }
+//        }
+        setContentView(R.layout.layout)
     }
 
 //    private val leCallback = object: ScanCallback() {
@@ -189,6 +192,76 @@ class MainActivity : ComponentActivity() {
         ) {
             super.onCharacteristicChanged(gatt, characteristic, value)
             Log.i("BLE", "Characteristic ${characteristic.uuid} = ${value.contentToString()} = ${parseBytes(value)}")
+            var text: TextView? = null
+            var units: String = ""
+            var multiplier: Float = 1.0f
+            when (characteristic.uuid) {
+                characteristics[0] -> {
+                    units = "RPM"
+                    text = findViewById(R.id.rpmView)
+                }
+
+                characteristics[1] -> {
+                    units = "Degrees \u00b0"
+                    text = findViewById(R.id.coolantTempView)
+                }
+
+                characteristics[2] -> {
+                    units = "Degrees \u00b0"
+                    text = findViewById(R.id.intakeAirTempView)
+                }
+
+                characteristics[3] -> {
+                    units = "MPH"
+                    text = findViewById(R.id.speedView)
+                    multiplier = 1.0f / 1.609f
+                }
+
+                characteristics[4] -> {
+                    units = "Degrees \u00b0"
+                    text = findViewById(R.id.ambientTempView)
+                }
+
+                characteristics[5] -> {
+                    units = "%"
+                    text = findViewById(R.id.fuelView)
+                }
+
+                characteristics[6] -> {
+                    units = "g/s"
+                    text = findViewById(R.id.mafFlowRateView)
+                }
+
+                characteristics[7] -> {
+                    units = "%"
+                    text = findViewById(R.id.throttlePositionView)
+                }
+
+                characteristics[8] -> {
+                    units = "V"
+                    text = findViewById(R.id.voltageView)
+                }
+
+                characteristics[9] -> {
+                    units = "miles"
+                    text = findViewById(R.id.odometerView)
+                    multiplier = 1.0f / 1.609f
+                }
+
+                characteristics[10] -> {
+                    units = "Degrees \u00b0"
+                    text = findViewById(R.id.engineOilTempView)
+                }
+
+                characteristics[11] -> {
+                    units = ""
+                    text = findViewById(R.id.gearRatioView)
+                }
+            }
+
+            text?.post(Runnable {
+                text.text = String.format(Locale.getDefault(), "%.02f %s", parseBytes(value) * multiplier, units)
+            })
         }
 
         override fun onDescriptorWrite(
