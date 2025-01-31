@@ -14,11 +14,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,7 +29,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 
 class MainActivity : ComponentActivity() {
-    private var name: String = "name"
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
@@ -42,6 +37,13 @@ class MainActivity : ComponentActivity() {
     private var bluetoothGatt: BluetoothGatt? = null
     private val REQ_CODE: Int = 10001
     private val OBDII_ADDR: String = "B8:27:EB:19:80:D8"
+
+    private var max_rpm: Float = 0.0f
+    private var start_fuel: Float = 0.0f
+    private var min_fuel: Float = 200.0f
+    private var max_speed: Float = 0.0f
+    private var max_coolant_temp: Float = 0.0f
+    private var max_throttle_position: Float = 0.0f
 
     private val req_perms: Array<String> = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
         arrayOf(
@@ -102,21 +104,11 @@ class MainActivity : ComponentActivity() {
 
         if (!(req_perms.all {ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED})) {
             ActivityCompat.requestPermissions(this, req_perms, REQ_CODE)
-        }else {
+        } else {
             val device = bluetoothAdapter.getRemoteDevice(OBDII_ADDR)
             bluetoothGatt = device.connectGatt(this@MainActivity, false, gattCallback)
         }
 
-//        setContent {
-//            DigitalDashTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    Greeting(
-//                        name = name,
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
-//                }
-//            }
-//        }
         setContentView(R.layout.layout)
     }
 
@@ -192,76 +184,135 @@ class MainActivity : ComponentActivity() {
         ) {
             super.onCharacteristicChanged(gatt, characteristic, value)
             Log.i("BLE", "Characteristic ${characteristic.uuid} = ${value.contentToString()} = ${parseBytes(value)}")
+
             var text: TextView? = null
+            var name: String = ""
             var units: String = ""
             var multiplier: Float = 1.0f
+            val fval: Float = parseBytes(value)
+
             when (characteristic.uuid) {
                 characteristics[0] -> {
-                    units = "RPM"
+                    name = "Engine Speed: "
+                    units = " rpm"
                     text = findViewById(R.id.rpmView)
+                    if (fval > max_rpm) {
+                        max_rpm = fval
+                    }
                 }
 
                 characteristics[1] -> {
-                    units = "Degrees \u00b0"
+                    name = "Coolant Temperature: "
+                    units = " \u00b0C"
                     text = findViewById(R.id.coolantTempView)
                 }
 
                 characteristics[2] -> {
-                    units = "Degrees \u00b0"
+                    name = "Intake Air Temperature: "
+                    units = " \u00b0C"
                     text = findViewById(R.id.intakeAirTempView)
                 }
 
                 characteristics[3] -> {
-                    units = "MPH"
+                    name = "Speed: "
+                    units = " mph"
                     text = findViewById(R.id.speedView)
                     multiplier = 1.0f / 1.609f
+                    if ((fval * multiplier) > max_speed) {
+                        max_speed = fval * multiplier
+                    }
                 }
 
                 characteristics[4] -> {
-                    units = "Degrees \u00b0"
+                    name = "Ambient Temperature: "
+                    units = " \u00b0C"
                     text = findViewById(R.id.ambientTempView)
                 }
 
                 characteristics[5] -> {
+                    name = "Fuel Level: "
                     units = "%"
                     text = findViewById(R.id.fuelView)
+                    if (start_fuel == 0.0f) {
+                        start_fuel = fval
+                    }
+                    if (fval < min_fuel) {
+                        min_fuel = fval
+                    }
                 }
 
                 characteristics[6] -> {
-                    units = "g/s"
+                    name = "Mass Air Flow Rate: "
+                    units = " g/s"
                     text = findViewById(R.id.mafFlowRateView)
                 }
 
                 characteristics[7] -> {
+                    name = "Throttle Position: "
                     units = "%"
                     text = findViewById(R.id.throttlePositionView)
+                    if (fval > max_throttle_position) {
+                        max_throttle_position = fval
+                    }
                 }
 
                 characteristics[8] -> {
-                    units = "V"
+                    name = "Control Module Voltage: "
+                    units = " V"
                     text = findViewById(R.id.voltageView)
                 }
 
                 characteristics[9] -> {
-                    units = "miles"
+                    name = "Odometer: "
+                    units = " miles"
                     text = findViewById(R.id.odometerView)
                     multiplier = 1.0f / 1.609f
                 }
 
                 characteristics[10] -> {
-                    units = "Degrees \u00b0"
+                    name = "Engine Oil Temperature: "
+                    units = " \u00b0C"
                     text = findViewById(R.id.engineOilTempView)
                 }
 
                 characteristics[11] -> {
+                    name = "Gear Ratio: "
                     units = ""
                     text = findViewById(R.id.gearRatioView)
                 }
             }
 
-            text?.post(Runnable {
-                text.text = String.format(Locale.getDefault(), "%.02f %s", parseBytes(value) * multiplier, units)
-            })
+            if (text != findViewById(R.id.gearRatioView)) {
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "%s%.02f%s", name, fval * multiplier, units)
+                })
+            } else {
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
+                })
+            }
+
+            if (fval == 0.0f && text == findViewById(R.id.rpmView)) {
+                text = findViewById(R.id.rpmView)
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "Max RPM: %.02fRPM", max_rpm)
+                })
+
+                text = findViewById(R.id.throttlePositionView)
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
+                })
+
+                text = findViewById(R.id.speedView)
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
+                })
+
+                text = findViewById(R.id.coolantTempView)
+                text?.post(Runnable {
+                    text!!.text = String.format(Locale.getDefault(), "Max coolant temp: %.02fDegrees\u00b0C", max_coolant_temp)
+                })
+            }
         }
 
         override fun onDescriptorWrite(
@@ -272,38 +323,12 @@ class MainActivity : ComponentActivity() {
             super.onDescriptorWrite(gatt, descriptor, status)
             operationCompleted()
         }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray,
-            status: Int
-        ) {
-            super.onCharacteristicRead(gatt, characteristic, value, status)
-            Log.i("BLE", "Characteristic ${characteristic.uuid} = ${value.contentToString()}")
-        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         bluetoothGatt?.close()
         bluetoothGatt = null
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DigitalDashTheme {
-        Greeting("Bluetooth")
     }
 }
 

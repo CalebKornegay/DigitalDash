@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">DigitalDash</string>
+    <string name="intake_air_temperature_0_00_u00b0c">Intake Air Temperature: 0.00 °C</string>
+    <string name="engine_oil_temperature_0_00_u00b0c">Engine Oil Temperature: 0.00 °C</string>
+    <string name="coolant_temperature_0_00_u00b0c">Coolant Temperature: 0.00 °C</string>
+    <string name="fuel_level_0_00">Fuel Level: 0.00%</string>
+    <string name="engine_speed_0_00rpm">Engine Speed: 0.00 rpm</string>
+    <string name="mass_air_flow_rate_0_00g_s">Mass Air Flow Rate: 0.00 g/s</string>
+    <string name="odometer_0_00miles">Odometer: 0.00 miles</string>
+    <string name="speed_0_00mph">Speed: 0.00 mph</string>
+    <string name="throttle_position_0_00">Throttle Position: 0.00%</string>
+    <string name="gear_ratio_0_00">Gear Ratio: 0.00</string>
+    <string name="ambient_temperature_0_00_u00b0c">Ambient Temperature: 0.00 °C</string>
+    <string name="control_module_voltage_0_00v">Control Module Voltage: 0.00 V</string>
 </resources>

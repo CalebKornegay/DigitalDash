@@ -31,6 +31,10 @@ type DigitalDash struct {
 	voltage_wait         time.Duration
 }
 
+/*
+* Helper functions
+ */
+
 func check_err(err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error was %s\n", err.Error())
@@ -63,6 +67,38 @@ func Float32FromBytes(bytes []byte) float32 {
 	return float
 }
 
+func connect_to_car() (*elmobd.Device, error) {
+	var device *elmobd.Device
+	var err error
+
+	device, err = elmobd.NewDevice("/dev/ttyUSB0", false)
+	if err == nil {
+		return device, nil
+	}
+
+	device, err = elmobd.NewDevice("/dev/ttyUSB1", false)
+	if err == nil {
+		return device, nil
+	}
+
+	device, err = elmobd.NewDevice("/dev/ttyUSB2", false)
+	if err == nil {
+		return device, nil
+	}
+
+	device, err = elmobd.NewDevice("/dev/ttyUSB3", false)
+	if err == nil {
+		return device, nil
+	}
+
+	return nil, fmt.Errorf("NO")
+
+}
+
+/*
+* Update the values functions
+ */
+
 func (dash *DigitalDash) updateRPM(measurement *bluetooth.Characteristic) {
 	defer dash.wg.Done()
 
@@ -71,7 +107,7 @@ func (dash *DigitalDash) updateRPM(measurement *bluetooth.Characteristic) {
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The engine rpm is %f\n", cmd.Value)
+		// log("The engine rpm is %f\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(cmd.Value))
 		check_err(err)
@@ -87,7 +123,7 @@ func (dash *DigitalDash) updateFuelLevel(measurement *bluetooth.Characteristic) 
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The fuel level is %f%%\n", cmd.Value*100)
+		// log("The fuel level is %f%%\n", cmd.Value*100)
 
 		_, err = measurement.Write(Float32ToByte(cmd.Value * 100))
 		check_err(err)
@@ -103,7 +139,7 @@ func (dash *DigitalDash) updateCoolantTemp(measurement *bluetooth.Characteristic
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The coolant temp is %d\u00b0\n", cmd.Value)
+		// log("The coolant temp is %d\u00b0\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(float32(cmd.Value)))
 		check_err(err)
@@ -116,10 +152,11 @@ func (dash *DigitalDash) updateEngineOilTemp(measurement *bluetooth.Characterist
 	defer dash.wg.Done()
 	for {
 		cmd := elmobd.NewEngineOilTemperature()
-		_, err, _ := dash.device.RunOBDCommand(cmd)
+		_, err, raw_val := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
 		log("The engine oil temp is %d\u00b0\n", cmd.Value)
+		log("The raw engine oil temp is %v\n", raw_val)
 
 		_, err = measurement.Write(Float32ToByte(float32(cmd.Value)))
 		check_err(err)
@@ -135,7 +172,7 @@ func (dash *DigitalDash) updateIntakeAirTemp(measurement *bluetooth.Characterist
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The intake air temp is %d\u00b0C\n", cmd.Value)
+		// log("The intake air temp is %d\u00b0C\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(float32(cmd.Value)))
 		check_err(err)
@@ -151,7 +188,7 @@ func (dash *DigitalDash) updateMAFFlowRate(measurement *bluetooth.Characteristic
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The mass air flow sensor air flow rate is is %fg/min\n", cmd.Value)
+		// log("The mass air flow sensor air flow rate is is %fg/min\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(cmd.Value))
 		check_err(err)
@@ -168,7 +205,7 @@ func (dash *DigitalDash) updateActualGear(measurement *bluetooth.Characteristic)
 
 		check_err(err)
 		log("The current gear is %s\n", cmd.ValueAsLit())
-		log("The current gear is %v\n", raw_val)
+		log("The raw current gear is %v\n", raw_val)
 
 		_, err = measurement.Write(raw_val)
 		check_err(err)
@@ -184,7 +221,7 @@ func (dash *DigitalDash) updateSpeed(measurement *bluetooth.Characteristic) {
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The current speed is %d\n", cmd.Value)
+		// log("The current speed is %d\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(float32(cmd.Value & 255)))
 		check_err(err)
@@ -200,7 +237,7 @@ func (dash *DigitalDash) updateAmbientTemp(measurement *bluetooth.Characteristic
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The ambient temp is %d\u00b0\n", cmd.Value)
+		// log("The ambient temp is %d\u00b0\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(float32(cmd.Value)))
 		check_err(err)
@@ -216,7 +253,7 @@ func (dash *DigitalDash) updateThrottlePosition(measurement *bluetooth.Character
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The throttle position is %f%%\n", cmd.Value*100)
+		// log("The throttle position is %f%%\n", cmd.Value*100)
 
 		_, err = measurement.Write(Float32ToByte(cmd.Value * 100))
 		check_err(err)
@@ -232,7 +269,7 @@ func (dash *DigitalDash) updateOdometer(measurement *bluetooth.Characteristic) {
 		_, err, _ := dash.device.RunOBDCommand(cmd)
 
 		check_err(err)
-		log("The current mileage is %f miles\n", cmd.Value)
+		// log("The current mileage is %f miles\n", cmd.Value)
 
 		_, err = measurement.Write(Float32ToByte(cmd.Value))
 		check_err(err)
@@ -249,7 +286,7 @@ func (dash *DigitalDash) updateVoltage(measurement *bluetooth.Characteristic) {
 
 		check_err(err)
 
-		log("The current battery voltage is %fV\n", voltage)
+		// log("The current battery voltage is %fV\n", voltage)
 
 		_, err = measurement.Write(Float32ToByte(voltage))
 		check_err(err)
@@ -451,12 +488,10 @@ func main() {
 	// }
 
 	// Try to connect to the device multiple times before giving up
-	for i := 0; i < 5; i++ {
-		device, err = elmobd.NewDevice("/dev/ttyUSB0", true)
+	for {
+		device, err = connect_to_car()
 		if err == nil {
 			break
-		} else if i == 4 {
-			fatal(err)
 		}
 		time.Sleep(time.Second * 3)
 	}
@@ -475,6 +510,7 @@ func main() {
 		maf_wait:             time.Millisecond * 500,
 		speed_wait:           time.Millisecond * 100,
 		throttle_pos_wait:    time.Millisecond * 250,
+		fuel_level_wait:      time.Second * 5,
 		odometer_wait:        time.Second * 5,
 		voltage_wait:         time.Second * 5,
 	}

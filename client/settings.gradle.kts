@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "DigitalDash"
 include(":app")
+include(":digitaldash")
