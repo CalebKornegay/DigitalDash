@@ -91,4 +91,14 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="@string/control_module_voltage_0_00v"/>
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#4CAF50"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:text="@string/show_maxes_if_car_is_off"
+        android:textSize="24sp"/>
 </LinearLayout>

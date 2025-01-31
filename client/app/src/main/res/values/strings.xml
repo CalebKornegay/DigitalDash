@@ -12,4 +12,5 @@
     <string name="gear_ratio_0_00">Gear Ratio: 0.00</string>
     <string name="ambient_temperature_0_00_u00b0c">Ambient Temperature: 0.00 °C</string>
     <string name="control_module_voltage_0_00v">Control Module Voltage: 0.00 V</string>
+    <string name="show_maxes_if_car_is_off">Show maxes (if car is off)</string>
 </resources>

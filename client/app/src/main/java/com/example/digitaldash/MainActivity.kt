@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,8 @@ class MainActivity : ComponentActivity() {
     private var bluetoothGatt: BluetoothGatt? = null
     private val REQ_CODE: Int = 10001
     private val OBDII_ADDR: String = "B8:27:EB:19:80:D8"
+
+    private var stop_button: Button? = null;
 
     private var max_rpm: Float = 0.0f
     private var start_fuel: Float = 0.0f
@@ -110,6 +113,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContentView(R.layout.layout)
+
+        stop_button = findViewById(R.id.stopButton);
+
+        stop_button?.setOnClickListener {
+            showMaxes();
+        }
     }
 
 //    private val leCallback = object: ScanCallback() {
@@ -284,35 +293,17 @@ class MainActivity : ComponentActivity() {
 
             if (text != findViewById(R.id.gearRatioView)) {
                 text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "%s%.02f%s", name, fval * multiplier, units)
+                    text.text = String.format(Locale.getDefault(), "%s%.02f%s", name, fval * multiplier, units)
                 })
             } else {
                 text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
+                    text.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
                 })
             }
 
-            if (fval == 0.0f && text == findViewById(R.id.rpmView)) {
-                text = findViewById(R.id.rpmView)
-                text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "Max RPM: %.02fRPM", max_rpm)
-                })
-
-                text = findViewById(R.id.throttlePositionView)
-                text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
-                })
-
-                text = findViewById(R.id.speedView)
-                text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
-                })
-
-                text = findViewById(R.id.coolantTempView)
-                text?.post(Runnable {
-                    text!!.text = String.format(Locale.getDefault(), "Max coolant temp: %.02fDegrees\u00b0C", max_coolant_temp)
-                })
-            }
+//            if (fval == 0.0f && text == findViewById(R.id.rpmView)) {
+//
+//            }
         }
 
         override fun onDescriptorWrite(
@@ -329,6 +320,30 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         bluetoothGatt?.close()
         bluetoothGatt = null
+    }
+
+    private fun showMaxes() {
+        var text: TextView? = null
+
+        text = findViewById(R.id.rpmView)
+        text?.post(Runnable {
+            text!!.text = String.format(Locale.getDefault(), "Max RPM: %.02fRPM", max_rpm)
+        })
+
+        text = findViewById(R.id.throttlePositionView)
+        text?.post(Runnable {
+            text!!.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
+        })
+
+        text = findViewById(R.id.speedView)
+        text?.post(Runnable {
+            text!!.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
+        })
+
+        text = findViewById(R.id.coolantTempView)
+        text?.post(Runnable {
+            text!!.text = String.format(Locale.getDefault(), "Max coolant temp: %.02fDegrees\u00b0C", max_coolant_temp)
+        })
     }
 }
 
