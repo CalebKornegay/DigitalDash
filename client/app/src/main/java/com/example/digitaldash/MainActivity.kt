@@ -300,10 +300,6 @@ class MainActivity : ComponentActivity() {
                     text.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
                 })
             }
-
-//            if (fval == 0.0f && text == findViewById(R.id.rpmView)) {
-//
-//            }
         }
 
         override fun onDescriptorWrite(
@@ -326,24 +322,16 @@ class MainActivity : ComponentActivity() {
         var text: TextView? = null
 
         text = findViewById(R.id.rpmView)
-        text?.post(Runnable {
-            text!!.text = String.format(Locale.getDefault(), "Max RPM: %.02fRPM", max_rpm)
-        })
+        text?.text = String.format(Locale.getDefault(), "Max RPM: %.02fRPM", max_rpm)
 
         text = findViewById(R.id.throttlePositionView)
-        text?.post(Runnable {
-            text!!.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
-        })
+        text?.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
 
         text = findViewById(R.id.speedView)
-        text?.post(Runnable {
-            text!!.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
-        })
+        text?.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
 
         text = findViewById(R.id.coolantTempView)
-        text?.post(Runnable {
-            text!!.text = String.format(Locale.getDefault(), "Max coolant temp: %.02fDegrees\u00b0C", max_coolant_temp)
-        })
+        text?.text = String.format(Locale.getDefault(), "Max coolant temp: %.02f Degrees\u00b0C", max_coolant_temp)
     }
 }
 
