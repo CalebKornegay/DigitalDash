@@ -214,6 +214,9 @@ class MainActivity : ComponentActivity() {
                     name = "Coolant Temperature: "
                     units = " \u00b0C"
                     text = findViewById(R.id.coolantTempView)
+                    if (fval > max_coolant_temp) {
+                        max_coolant_temp = fval
+                    }
                 }
 
                 characteristics[2] -> {
@@ -227,8 +230,8 @@ class MainActivity : ComponentActivity() {
                     units = " mph"
                     text = findViewById(R.id.speedView)
                     multiplier = 1.0f / 1.609f
-                    if ((fval * multiplier) > max_speed) {
-                        max_speed = fval * multiplier
+                    if (fval > max_speed) {
+                        max_speed = fval
                     }
                 }
 
@@ -328,7 +331,7 @@ class MainActivity : ComponentActivity() {
         text?.text = String.format(Locale.getDefault(), "Max Throttle Position: %.02f%s", max_throttle_position, "%")
 
         text = findViewById(R.id.speedView)
-        text?.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed)
+        text?.text = String.format(Locale.getDefault(), "Max Speed: %.02fMPH", max_speed / 1.609f)
 
         text = findViewById(R.id.coolantTempView)
         text?.text = String.format(Locale.getDefault(), "Max coolant temp: %.02f Degrees\u00b0C", max_coolant_temp)
