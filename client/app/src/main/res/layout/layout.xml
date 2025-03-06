@@ -4,8 +4,8 @@
     android:layout_height="match_parent"
     android:layout_gravity="center_vertical"
     android:gravity="center_horizontal"
-    android:layout_marginTop="30dp"
-    android:layout_marginBottom="20dp"
+    android:layout_marginTop="45dp"
+    android:layout_marginBottom="45dp"
     android:orientation="vertical">
 
     <TextView
@@ -29,12 +29,12 @@
         android:layout_weight="1"
         android:text="@string/coolant_temperature_0_00_u00b0c"/>
 
-    <TextView
-        android:id="@+id/engineOilTempView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/engine_oil_temperature_0_00_u00b0c"/>
+<!--    <TextView-->
+<!--        android:id="@+id/engineOilTempView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_weight="1"-->
+<!--        android:text="@string/engine_oil_temperature_0_00_u00b0c"/>-->
 
     <TextView
         android:id="@+id/intakeAirTempView"
@@ -71,12 +71,12 @@
         android:layout_weight="1"
         android:text="@string/throttle_position_0_00"/>
 
-    <TextView
-        android:id="@+id/gearRatioView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/gear_ratio_0_00"/>
+<!--    <TextView-->
+<!--        android:id="@+id/gearRatioView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_weight="1"-->
+<!--        android:text="@string/gear_ratio_0_00"/>-->
 
     <TextView
         android:id="@+id/ambientTempView"
@@ -96,9 +96,8 @@
         android:id="@+id/stopButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#4CAF50"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
         android:text="@string/show_maxes_if_car_is_off"
-        android:textSize="24sp"/>
+        android:textSize="12sp"
+        android:paddingHorizontal="10dp"
+        android:layout_weight="1"/>
 </LinearLayout>

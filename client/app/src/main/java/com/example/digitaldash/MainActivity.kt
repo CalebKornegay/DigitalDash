@@ -1,6 +1,7 @@
 package com.example.digitaldash
 
 import android.Manifest
+import android.app.ActionBar
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -12,17 +13,14 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.view.Window
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.digitaldash.ui.theme.DigitalDashTheme
 import java.util.Locale
 import java.util.Queue
 import java.util.UUID
@@ -104,6 +102,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.decorView.apply {
+            // Hide both the navigation bar and the status bar.
+            // SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
+            // a general rule, you should design your app to hide the status bar whenever you
+            // hide the navigation bar.
+            systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        }
 
         if (!(req_perms.all {ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED})) {
             ActivityCompat.requestPermissions(this, req_perms, REQ_CODE)
@@ -111,6 +116,7 @@ class MainActivity : ComponentActivity() {
             val device = bluetoothAdapter.getRemoteDevice(OBDII_ADDR)
             bluetoothGatt = device.connectGatt(this@MainActivity, false, gattCallback)
         }
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         setContentView(R.layout.layout)
 
@@ -278,28 +284,28 @@ class MainActivity : ComponentActivity() {
                     multiplier = 1.0f / 1.609f
                 }
 
-                characteristics[10] -> {
-                    name = "Engine Oil Temperature: "
-                    units = " \u00b0C"
-                    text = findViewById(R.id.engineOilTempView)
-                }
+//                characteristics[10] -> {
+//                    name = "Engine Oil Temperature: "
+//                    units = " \u00b0C"
+//                    text = findViewById(R.id.engineOilTempView)
+//                }
 
-                characteristics[11] -> {
-                    name = "Gear Ratio: "
-                    units = ""
-                    text = findViewById(R.id.gearRatioView)
-                }
+//                characteristics[11] -> {
+//                    name = "Gear Ratio: "
+//                    units = ""
+//                    text = findViewById(R.id.gearRatioView)
+//                }
             }
 
-            if (text != findViewById(R.id.gearRatioView)) {
+            /*if (text != findViewById(R.id.gearRatioView)) {
                 text?.post(Runnable {
                     text.text = String.format(Locale.getDefault(), "%s%.02f%s", name, fval * multiplier, units)
                 })
-            } else {
+            } else {*/
                 text?.post(Runnable {
                     text.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
                 })
-            }
+            //}
         }
 
         override fun onDescriptorWrite(
