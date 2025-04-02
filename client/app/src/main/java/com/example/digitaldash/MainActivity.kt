@@ -300,15 +300,15 @@ class MainActivity : ComponentActivity() {
 //                }
             }
 
-            /*if (text != findViewById(R.id.gearRatioView)) {
+//            if (text != findViewById(R.id.gearRatioView)) {
                 text?.post(Runnable {
                     text.text = String.format(Locale.getDefault(), "%s%.02f%s", name, fval * multiplier, units)
                 })
-            } else {*/
-                text?.post(Runnable {
-                    text.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
-                })
-            //}
+//            } else {
+//                text?.post(Runnable {
+//                    text.text = String.format(Locale.getDefault(), "%s%s", name, value.toString())
+//                })
+//            }
         }
 
         override fun onDescriptorWrite(
